@@ -1,0 +1,41 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: appsubtest
+  namespace: cstarktest
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+  creationTimestamp: 2023-09-18T16:15:04Z
+  generation: 1
+  managedFields:
+  resourceVersion: "298079937"
+  uid: 600f5254-aa17-4c56-9a6f-7ffc521a34c8
+spec:
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: acm-observabiltiy-status
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates-raw: |
+            {{- $parentSub := (lookup "apps.open-cluster-management.io/v1alpha1" "SubscriptionStatus" "bry-tam-app" "bry-tam-subscription-1") }}
+            {{- range $pp := (lookup "apps.open-cluster-management.io/v1" "Subscription" "" "" "app=bry-tam" ).items }}
+            {{- if and (ne $pp.metadata.name "bry-tam-subscription-1") (not (hasSuffix "-local" $pp.metadata.name)) }}
+        
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: apps.open-cluster-management.io/v1
+                kind: Subscription
+                metadata:
+                  name: {{ $pp.metadata.name }}
+                  namespace: {{ $pp.metadata.namespace }}
+                  annotations:
+                    apps.open-cluster-management.io/manual-refresh-time: {{ (index $parentSub.statuses.packages 0 "lastUpdateTime") }}
+            {{- end }}
+            {{- end }} 
